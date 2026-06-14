@@ -1,105 +1,25 @@
-export class Main {
-    ctx: CanvasRenderingContext2D | null
-    img: HTMLImageElement
-    x: number
-    y: number
+import { Player } from "./entities/player"
+import { Scene } from "./module/pixlite"
+
+export class Main extends Scene {
     constructor() {
-        const canvas = document.createElement("canvas")
-        canvas.style.width = "100vw"
-        canvas.style.backgroundColor = "#333333"
-        canvas.style.imageRendering = "pixelated"
-        canvas.width = 100
-        canvas.height = 100
-        document.body.appendChild(canvas)
-
-        this.ctx = canvas.getContext("2d")
-        this.ctx!.imageSmoothingEnabled = false
-
-        this.img = new Image()
-
-        this.x = 0
-        this.y = 0
-
-        const idleAtlas = [
-            {
-                sX: 6, sY: 6,
-                sW: 16, sH: 16,
-                dX: -8, dY: -6,
-                dW: 32, dH: 32
-
-            },
-            {
-                sX: 38, sY: 6,
-                sW: 16, sH: 16,
-                dX: -8, dY: -8,
-                dW: 32, dH: 32
-            }
-        ]
-
-        const fps = 5
-        this.update("/idle.png", fps, idleAtlas)
-
-        const speed = 5
-        window.addEventListener("keydown", (e) => {
-            switch (e.key) {
-                case 'ArrowUp':
-                    this.y += speed
-                    break;
-                case 'ArrowDown':
-                    this.y -= speed
-                    break;
-                case 'ArrowLeft':
-                    this.x += speed
-                    break;
-                case 'ArrowRight':
-                    this.x -= speed
-                    break;
-            }
+        super({
+            width: window.innerWidth,
+            height: window.innerHeight,
+            debugMode: true
         })
-    }
 
-    update(imgSrc: string, fps: number, imgAtlasAnim: imgAtlasAnim) {
-        let i = 0
-        let lastT = 0
-        let interval = 1000 / fps
-        this.img.src = imgSrc
+        new Player(this)
 
-        const anim = (currentT: number) => {
-            if (!this.ctx) return
-
-            if (i > imgAtlasAnim.length - 1) i = 0
-            this.ctx.clearRect(0, 0, 100, 100) // TODO
-            this.ctx.drawImage(
-                this.img,
-                imgAtlasAnim[i].sX, imgAtlasAnim[i].sY,
-                imgAtlasAnim[i].sW, imgAtlasAnim[i].sH,
-                imgAtlasAnim[i].dX - this.x,
-                imgAtlasAnim[i].dY - this.y,
-                imgAtlasAnim[i].dW, imgAtlasAnim[i].dH
-            )
-
-            const deltaT = currentT - lastT
-            if (deltaT > interval) {
-                i++
-                lastT = currentT - (deltaT % interval)
-            }
-
-            requestAnimationFrame(anim)
-        }
-
-        this.img.onload = () => {
-            requestAnimationFrame(anim)
-        }
+        // this.update(() => {
+        // player.update()
+        // })
     }
 }
 
 document.body.style.padding = "0px"
 document.body.style.margin = "0px"
+document.body.style.backgroundColor = "gray"
 new Main()
 
-type imgAtlasAnim = {
-    sX: number, sY: number,
-    sW: number, sH: number,
-    dX: number, dY: number,
-    dW: number, dH: number
-}[]
+
