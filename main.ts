@@ -1,5 +1,6 @@
 import { Player } from "./entities/player"
-import { Scene } from "./module/pixlite"
+import { Scene } from "./module/scene"
+import { Text } from "./module/text"
 
 export class Main extends Scene {
     constructor() {
@@ -10,6 +11,7 @@ export class Main extends Scene {
         })
 
         new Player(this)
+        new Text(this, "").debugMode()
 
         // this.update(() => {
         // player.update()

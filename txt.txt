@@ -1,3 +1,36 @@
+    animation(fps: number, imgAtlasArray: imgAtlas[]) {
+        let i = 0
+        let lastT = 0
+        let interval = 1000 / fps
+
+        const anim = (currentT: number) => {
+            if (!this.scene.ctx) return
+
+            if (i > imgAtlasArray.length - 1) i = 0
+            this.scene.ctx.clearRect(0, 0, 100, 100) // TODO
+            this.scene.ctx.drawImage(
+                this.scene.img,
+                imgAtlasArray[i].sX, imgAtlasArray[i].sY,
+                imgAtlasArray[i].sW, imgAtlasArray[i].sH,
+                imgAtlasArray[i].dX - (-this.x), imgAtlasArray[i].dY - (-this.y),
+                imgAtlasArray[i].dW, imgAtlasArray[i].dH
+            )
+
+            const deltaT = currentT - lastT
+            if (deltaT > interval) {
+                i++
+                lastT = currentT - (deltaT % interval)
+            }
+
+            requestAnimationFrame(anim)
+        }
+
+        this.scene.img.onload = () => {
+            requestAnimationFrame(anim)
+        }
+    }
+
+
 export class Main {
     ctx: CanvasRenderingContext2D | null
     img: HTMLImageElement
@@ -91,6 +124,12 @@ export class Main {
             requestAnimationFrame(anim)
         }
     }
+}
+type imgAtlas = {
+    sX: number, sY: number,
+    sW: number, sH: number,
+    dX: number, dY: number,
+    dW: number, dH: number
 }
 
 document.body.style.padding = "0px"

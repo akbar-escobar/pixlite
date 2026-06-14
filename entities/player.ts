@@ -1,32 +1,45 @@
-import { GameObject } from "../module/pixlite"
-import { Scene } from "../module/pixlite"
+import { Scene } from "../module/scene"
+import { Sprite } from "../module/sprite"
 
-export class Player extends GameObject {
+export class Player extends Sprite {
     constructor(scene: Scene) {
-        super(scene, "")
-        // scene.addCamera(this)
-        this.addImg("/idle.png", {
-            x: 0, y: 0,
-            w: 36, h: 36
-        })
+        super(scene, "", 0, 0)
+        this.imgSrc = "/walk.png"
+        this.redraw()
         this.scale = 8
+        this.atlas =
+        {
+            x: 10, y: 9, w: 12, h: 14
+        }
 
         // const idleAtlas = [
         //     {
-        //         sX: 6, sY: 6,
-        //         sW: 16, sH: 16,
-        //         dX: -8, dY: -6,
-        //         dW: 32, dH: 32
+        //         x: 10, y: 9, w: 12, h: 14
         //     },
         //     {
-        //         sX: 38, sY: 6,
-        //         sW: 16, sH: 16,
-        //         dX: -8, dY: -8,
-        //         dW: 32, dH: 32
+        //         x: 42, y: 9, w: 12, h: 14
         //     }
         // ]
-
-        // this.animation(5, idleAtlas)
+        // this.addAnim("idle", idleAtlas)
+        //
+        // // this.imgSrc = "/walk.png"
+        // const walkRightAtlas = [
+        //     {
+        //         x: 10, y: 41, w: 12, h: 14
+        //     },
+        //     {
+        //         x: 42, y: 41, w: 12, h: 14
+        //     },
+        //     {
+        //         x: 74, y: 41, w: 12, h: 14
+        //     },
+        //     {
+        //         x: 106, y: 41, w: 12, h: 14
+        //     }
+        // ]
+        // this.addAnim("walk", walkRightAtlas)
+        //
+        // this.playAnim("idle")
         this.input()
     }
 
@@ -39,12 +52,14 @@ export class Player extends GameObject {
                     this.y -= speed
                     break;
                 case 'KeyS':
+                    this.flip.x = -1
                     this.y += speed
                     break;
                 case 'KeyA':
                     this.x -= speed
                     break;
                 case 'KeyD':
+                    this.flip.x = 1
                     this.x += speed
                     break;
             }
