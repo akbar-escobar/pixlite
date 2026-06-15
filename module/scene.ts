@@ -1,3 +1,6 @@
+import { Sprite } from "./sprite"
+import type { Text } from "./text"
+
 class Camera {
     zoom: number
     constructor() {
@@ -11,6 +14,8 @@ export class Scene {
     img: HTMLImageElement
     camera: Camera
     debugMode: boolean
+
+    children: (Sprite | Text)[]
     constructor({ width, height, debugMode = false }: sceneConfig) {
         this.canvas = document.createElement("canvas")
         this.canvas.style.backgroundColor = "#333333"
@@ -26,6 +31,10 @@ export class Scene {
 
         this.camera = new Camera()
         this.img = new Image()
+
+        this.children = []
+
+        this.update()
     }
 
     // TODO
@@ -33,9 +42,13 @@ export class Scene {
         this.ctx?.translate(window.innerWidth / 2, window.innerHeight / 2)
     }
 
-    update(callback: (now: number) => void) {
-       const loop = (now: number) => {
-            callback(now)
+    update() {
+        const loop = (nowTime: number) => {
+            for (const child of this.children) {
+                child.update()
+                child.render()
+                child.prevUpdate(nowTime)
+            }
             requestAnimationFrame(loop)
         }
         requestAnimationFrame(loop)

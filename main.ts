@@ -10,8 +10,8 @@ export class Main extends Scene {
             debugMode: true
         })
 
+        new Text(this, "")
         new Player(this)
-        new Text(this, "").debugMode()
 
         // this.update(() => {
         // player.update()
