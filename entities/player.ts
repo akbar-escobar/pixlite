@@ -6,12 +6,11 @@ export class Player extends Sprite {
         super(scene, "", 0, 0)
         this.imgSrc = "/walk.png"
         this.scale = 8
-        this.flip.x = true
         // console.log(this.imgSrc)
-        // this.atlas =
-        // [{
-        //     x: 10, y: 9, w: 12, h: 14
-        // }]
+        this.atlas =
+            [{
+                x: 10, y: 9, w: 12, h: 14
+            }]
         // const idleAtlas = [
         //     {
         //         x: 10, y: 9, w: 12, h: 14
@@ -21,8 +20,7 @@ export class Player extends Sprite {
         //     }
         // ]
         // this.addAnim("idle", idleAtlas)
-        //
-        // this.imgSrc = "/walk.png"
+        
         const walkRightAtlas = [
             {
                 x: 10, y: 41, w: 12, h: 14
@@ -55,9 +53,11 @@ export class Player extends Sprite {
                     this.y += speed
                     break;
                 case 'KeyA':
+                    this.flip.x = true
                     this.x -= speed
                     break;
                 case 'KeyD':
+                    this.flip.x = false
                     this.x += speed
                     break;
             }

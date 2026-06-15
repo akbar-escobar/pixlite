@@ -58,7 +58,19 @@ export class Sprite {
         }]
     }
 
-    update() { }
+    update() {
+        this.scene.ctx?.save()
+
+        this.scene.ctx?.translate(
+            this.flip.x ? 2 * this.x + this.width : 0,
+            this.flip.y ? 2 * this.y + this.height : 0
+        )
+
+        this.scene.ctx?.scale(
+            this.flip.x ? -1 : 1,
+            this.flip.y ? -1 : 1
+        )
+    }
 
     prevUpdate(nowTime: number) {
         this.prevXY = { x: this.x, y: this.y }
@@ -70,6 +82,8 @@ export class Sprite {
                 ? this.frameI++
                 : this.frameI = 0
         }
+
+        this.scene.ctx?.restore()
     }
 
     render() {

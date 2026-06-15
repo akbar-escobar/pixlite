@@ -9,11 +9,9 @@ export class Text {
 
     private scene: Scene
     private lastTime: number
-    private fps: number
     constructor(scene: Scene, text: string) {
         this.scene = scene
         this.lastTime = 0
-        this.fps = 60
 
         this.x = window.innerWidth / 1.5
         this.y = window.innerHeight / 7
@@ -29,9 +27,9 @@ export class Text {
 
     prevUpdate(nowTime: number) {
         const deltaTime = nowTime - this.lastTime
-        if (deltaTime > this.fps) {
-            this.lastTime = nowTime - (deltaTime % this.fps)
-            const frame= deltaTime > 0 ? Math.round(1000 / deltaTime) : 0;
+        if (deltaTime > 1) {
+            this.lastTime = nowTime
+            const frame = deltaTime > 0 ? Math.round(1000 / deltaTime) : 0;
 
             this.text = frame.toString()
         }
