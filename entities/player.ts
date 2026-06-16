@@ -4,13 +4,16 @@ import { Sprite } from "../module/sprite"
 export class Player extends Sprite {
     constructor(scene: Scene) {
         super(scene, "", 0, 0)
-        this.imgSrc = "/walk.png"
+        this.imgSrc = "player/walk.png"
         this.scale = 8
         // console.log(this.imgSrc)
         this.atlas =
             [{
                 x: 10, y: 9, w: 12, h: 14
             }]
+
+        this.hitbox = true
+
         // const idleAtlas = [
         //     {
         //         x: 10, y: 9, w: 12, h: 14
@@ -20,7 +23,7 @@ export class Player extends Sprite {
         //     }
         // ]
         // this.addAnim("idle", idleAtlas)
-        
+
         const walkRightAtlas = [
             {
                 x: 10, y: 41, w: 12, h: 14
@@ -35,7 +38,7 @@ export class Player extends Sprite {
                 x: 106, y: 41, w: 12, h: 14
             }
         ]
-        this.addAnim("walk", walkRightAtlas, "/walk.png")
+        this.addAnim("walk", walkRightAtlas, "player/walk.png")
         this.playAnim("walk")
 
         this.input()

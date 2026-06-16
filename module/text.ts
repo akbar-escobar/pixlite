@@ -20,7 +20,7 @@ export class Text {
         this.text = text
 
         scene.ctx!.font = `${this.size}px Arial`
-        scene.children.push(this)
+        scene.children = this
     }
 
     update() { }

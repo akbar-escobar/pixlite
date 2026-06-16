@@ -6,6 +6,8 @@ export class Sprite {
     atlas: atlas[]
     scale: number
     flip: { x: boolean, y: boolean }
+    hitbox: boolean
+    hitboxColor: string
 
     private animArray: { key: string, imgSrc: string, atlasArray: atlas[] }[]
     private prevXY: { x: number, y: number }
@@ -13,6 +15,7 @@ export class Sprite {
     private lastTime: number
     private frameI: number
     private scene: Scene
+    private img: HTMLImageElement
     constructor(
         scene: Scene,
         imgSrc: string,
@@ -20,7 +23,8 @@ export class Sprite {
         y: number,
     ) {
         this.scene = scene
-        scene.img.src = imgSrc
+        this.img = new Image()
+        this.img.src = imgSrc
         this.animArray = []
         this.frameI = 0
         this.animFps = 0
@@ -31,13 +35,15 @@ export class Sprite {
         this.y = y
         this.atlas = [{
             x: 0, y: 0,
-            w: this.scene.img.width,
-            h: this.scene.img.height
+            w: this.img.width,
+            h: this.img.height
         }]
         this.scale = 1
         this.flip = { x: false, y: false }
+        this.hitbox = false
+        this.hitboxColor = "blue"
 
-        scene.children.push(this)
+        scene.children = this
     }
 
     get width() {
@@ -49,17 +55,19 @@ export class Sprite {
     }
 
     set imgSrc(src: string) {
-        this.scene.img.src = src
+        this.img.src = src
 
         this.atlas = [{
             x: 0, y: 0,
-            w: this.scene.img.width,
-            h: this.scene.img.height
+            w: this.img.width,
+            h: this.img.height
         }]
     }
 
     update() {
         this.scene.ctx?.save()
+
+        this.scene.ctx!.fillStyle = this.hitboxColor
 
         this.scene.ctx?.translate(
             this.flip.x ? 2 * this.x + this.width : 0,
@@ -92,7 +100,14 @@ export class Sprite {
             this.width, this.height
         )
 
-        if (this.scene.debugMode) {
+        // if (this.scene.debugMode) {
+        //     this.scene.ctx?.fillRect(
+        //         this.x, this.y,
+        //         this.width, this.height
+        //     )
+        // }
+
+        if (this.hitbox) {
             this.scene.ctx?.fillRect(
                 this.x, this.y,
                 this.width, this.height
@@ -100,7 +115,7 @@ export class Sprite {
         }
 
         this.scene.ctx?.drawImage(
-            this.scene.img,
+            this.img,
             this.atlas[this.frameI].x, this.atlas[this.frameI].y,
             this.atlas[this.frameI].w, this.atlas[this.frameI].h,
             this.x, this.y,

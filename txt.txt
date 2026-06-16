@@ -1,3 +1,10 @@
+spatical object
+
+define cellSize => size = children.length - 1 ()
+make a grid => for(let x and y) 
+
+
+
 import { Scene } from "./scene"
 
 export class Sprite {
