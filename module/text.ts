@@ -23,9 +23,7 @@ export class Text {
         scene.children = this
     }
 
-    update() { }
-
-    prevUpdate(nowTime: number) {
+    update(nowTime:number) {
         const deltaTime = nowTime - this.lastTime
         if (deltaTime > 1) {
             this.lastTime = nowTime
@@ -33,10 +31,6 @@ export class Text {
 
             this.text = frame.toString()
         }
-    }
-
-    render() {
-        this.scene.ctx?.clearRect(0, 0, this.scene.canvas.width, this.scene.canvas.height)
         this.scene.ctx?.fillText(this.text, this.x, this.y)
     }
 }

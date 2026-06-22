@@ -1,4 +1,255 @@
+That's a good next step for PixLite.
+
+But before implementing spatial hashing, make sure you actually need it.
+
+For a small game:
+
+10 sprites
+20 enemies
+5 bullets
+
+a simple collision loop is fine:
+
+for (const a of colliders) {
+    for (const b of colliders) {
+        // collision check
+    }
+}
+
+Spatial hashing becomes useful when you have:
+
+100+ objects
+hundreds of bullets
+particles
+large maps
+
+
+---
+
+Step 1: Add a Hitbox component
+
+I'd start with a simple AABB (Axis-Aligned Bounding Box).
+
+class Hitbox {
+    constructor(
+        public parent: Sprite,
+        public offsetX = 0,
+        public offsetY = 0,
+        public width = 16,
+        public height = 16
+    ) {}
+
+    get x() {
+        return this.parent.x + this.offsetX;
+    }
+
+    get y() {
+        return this.parent.y + this.offsetY;
+    }
+}
+
+Usage:
+
+player.hitbox = new Hitbox(
+    player,
+    4,
+    2,
+    24,
+    30
+);
+
+
+---
+
+Step 2: Collision test
+
+function intersects(
+    a: Hitbox,
+    b: Hitbox
+) {
+    return (
+        a.x < b.x + b.width &&
+        a.x + a.width > b.x &&
+        a.y < b.y + b.height &&
+        a.y + a.height > b.y
+    );
+}
+
+
+---
+
+Step 3: Spatial Hash Grid
+
+Imagine the world divided into cells:
+
++----+----+----+
+|0,0 |1,0 |2,0 |
++----+----+----+
+|0,1 |1,1 |2,1 |
++----+----+----+
+|0,2 |1,2 |2,2 |
++----+----+----+
+
+Cell size:
+
+const CELL_SIZE = 64;
+
+
+---
+
+Convert world position to cell
+
+const cellX =
+    Math.floor(hitbox.x / CELL_SIZE);
+
+const cellY =
+    Math.floor(hitbox.y / CELL_SIZE);
+
+
+---
+
+Create key
+
+const key =
+    `${cellX},${cellY}`;
+
+Example:
+
+"3,4"
+
+
+---
+
+Step 4: Hash structure
+
+class SpatialHash {
+    cells = new Map<
+        string,
+        Hitbox[]
+    >();
+}
+
+
+---
+
+Insert object
+
+insert(hitbox: Hitbox) {
+    const cellX =
+        Math.floor(hitbox.x / 64);
+
+    const cellY =
+        Math.floor(hitbox.y / 64);
+
+    const key =
+        `${cellX},${cellY}`;
+
+    if (!this.cells.has(key)) {
+        this.cells.set(key, []);
+    }
+
+    this.cells.get(key)!.push(hitbox);
+}
+
+
+---
+
+Query nearby objects
+
+query(hitbox: Hitbox) {
+    const cellX =
+        Math.floor(hitbox.x / 64);
+
+    const cellY =
+        Math.floor(hitbox.y / 64);
+
+    const key =
+        `${cellX},${cellY}`;
+
+    return this.cells.get(key) ?? [];
+}
+
+Now:
+
+const nearby =
+    spatialHash.query(player.hitbox);
+
+for (const other of nearby) {
+    if (
+        other !== player.hitbox &&
+        intersects(
+            player.hitbox,
+            other
+        )
+    ) {
+        // collision
+    }
+}
+
+
+---
+
+Important improvement
+
+A hitbox may span multiple cells.
+
+Example:
+
++----+----+
+| A  | A  |
++----+----+
+
+If you only insert into one cell, collisions can be missed.
+
+Eventually you'll want:
+
+minCellX
+maxCellX
+
+minCellY
+maxCellY
+
+and insert into every covered cell.
+
+
+---
+
+How I'd structure PixLite
+
+Scene
+ ├─ SpatialHash
+ ├─ Player
+ ├─ Enemy
+ └─ Bullet
+
+Sprite
+ └─ Hitbox
+
+Every frame:
+
+clear spatial hash
+↓
+insert hitboxes
+↓
+query nearby
+↓
+collision checks
+
+A nice API could look like:
+
+player.hitbox = {
+    x: 4,
+    y: 2,
+    width: 24,
+    height: 30
+};
+
+and internally PixLite creates/manages the actual hitbox and spatial hash entries. This keeps the user API simple while letting you optimize later.
+
+
+
 spatical object
+
 
 define cellSize => size = children.length - 1 ()
 make a grid => for(let x and y) 

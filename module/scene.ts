@@ -19,10 +19,12 @@ export class Scene {
     _children: (Sprite | Text)[]
     cellN: number
     cellSize: number
-    cellCount: number[]
-    constructor({ width, height, debugMode = false }: sceneConfig) {
+    cellChild: Sprite[][]
+    private fps: number
+    private lastTime: number
+    constructor({ width, height, backgroundColor = "gray", debugMode = false }: sceneConfig) {
         this.canvas = document.createElement("canvas")
-        this.canvas.style.backgroundColor = "#333333"
+        this.canvas.style.backgroundColor = backgroundColor
         this.canvas.style.imageRendering = "pixelated"
         this.canvas.width = width
         this.canvas.height = height
@@ -41,7 +43,10 @@ export class Scene {
         this._children = []
         this.cellN = 0
         this.cellSize = 0
-        this.cellCount = []
+        this.cellChild = []
+
+        this.fps = 500
+        this.lastTime = 0
 
         this.update()
     }
@@ -50,7 +55,11 @@ export class Scene {
         if (child instanceof Sprite) {
             this.cellN++
             this.cellSize = (this.width + this.height) / this.cellN
-            this.cellCount.push(0)
+
+            this.cellChild = []
+            for (let i = 0; i < this.cellN * this.cellN; i++) {
+                this.cellChild.push([])
+            }
         }
         this._children.push(child)
     }
@@ -62,15 +71,35 @@ export class Scene {
 
     update() {
         const loop = (nowTime: number) => {
-            this._children.forEach(child => {
-                if (child instanceof Sprite) {
-                    this.spatialHashing(child)
+            const deltaTime = nowTime - this.lastTime
+            if (deltaTime > this.fps) {
+
+                this.ctx?.setTransform(1, 0, 0, 1, 0, 0)
+                this.ctx?.clearRect(
+                    0, 0,
+                    this.width,
+                    this.height
+                )
+
+                for (let y = 0; y < this.cellN; y++) {
+                    for (let x = 0; x < this.cellN; x++) {
+                        this.ctx!.fillStyle = "purple"
+                        if ((x + y) % 2 === 0) this.ctx!.fillStyle = "orange"
+                        this.ctx?.fillRect(x * this.cellSize, y * this.cellSize, this.cellSize, this.cellSize)
+                    }
                 }
 
-                child.update()
-                child.render()
-                child.prevUpdate(nowTime)
-            })
+                this._children.forEach(child => {
+                    this.lastTime = nowTime - (deltaTime % this.fps)
+
+                    if (child instanceof Sprite) this.spatialHashing(child)
+                    child.update(nowTime)
+                })
+                this.cellChild = []
+                for (let i = 0; i < this.cellN * this.cellN; i++) {
+                    this.cellChild.push([])
+                }
+            }
             requestAnimationFrame(loop)
         }
         requestAnimationFrame(loop)
@@ -79,29 +108,36 @@ export class Scene {
     spatialHashing(child: Sprite) {
         const cellXY = {
             x: Math.round(child.x / this.cellSize),
-            y: Math.round(child.y / this.cellSize),
-            color: child.hitboxColor
+            y: Math.round(child.y / this.cellSize)
         }
+        const i = (cellXY.y * this.cellN) + cellXY.x
 
-        for (let y = 0; y < this.cellN; y++) {
-            for (let x = 0; x < this.cellN; x++) {
-                if (x === cellXY.x && y === cellXY.y) {
-                    // still doesnt work
-                    this.cellCount[y]++
+        this.cellChild[i].push(child)
+
+        if (this.cellChild[i].length > 1) {
+            for (let a = 0; a < this.cellChild[i].length; a++) {
+                for (let b = a + 1; b < this.cellChild[i].length; b++) {
+                    const childA = this.cellChild[i][a]
+                    const childB = this.cellChild[i][b]
+                    if (
+                        childA.x < childB.x + childB.width &&
+                        childA.x + childA.width > childB.x &&
+                        childA.y < childB.y + childB.height &&
+                        childA.y + childA.height > childB.y
+                    ) {
+                        childA.hitboxColor = "red"
+                        childB.hitboxColor = "red"
+                    }
                 }
             }
         }
-        // this.cellCount[i]
-
-        // const hash = (xi * 92837111) ^ (yi * 689287499) ^ (zi * 283923481);
-        console.log(this.cellCount)
-        // this.cellN = this._children.length - 1
     }
 }
 
 type sceneConfig = {
     width: number,
     height: number,
+    backgroundColor?: string,
     debugMode?: boolean
 }
 

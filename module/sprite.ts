@@ -10,7 +10,6 @@ export class Sprite {
     hitboxColor: string
 
     private animArray: { key: string, imgSrc: string, atlasArray: atlas[] }[]
-    private prevXY: { x: number, y: number }
     private animFps: number
     private lastTime: number
     private frameI: number
@@ -29,7 +28,6 @@ export class Sprite {
         this.frameI = 0
         this.animFps = 0
         this.lastTime = 0
-        this.prevXY = { x: x, y: y }
 
         this.x = x
         this.y = y
@@ -64,9 +62,7 @@ export class Sprite {
         }]
     }
 
-    update() {
-        this.scene.ctx?.save()
-
+    ctxConfig() {
         this.scene.ctx!.fillStyle = this.hitboxColor
 
         this.scene.ctx?.translate(
@@ -80,9 +76,10 @@ export class Sprite {
         )
     }
 
-    prevUpdate(nowTime: number) {
-        this.prevXY = { x: this.x, y: this.y }
+    update(nowTime: number) {
+        this.scene.ctx?.save()
 
+        this.ctxConfig()
         const deltaTime = nowTime - this.lastTime
         if (deltaTime > this.animFps) {
             this.lastTime = nowTime - (deltaTime % this.animFps)
@@ -90,22 +87,6 @@ export class Sprite {
                 ? this.frameI++
                 : this.frameI = 0
         }
-
-        this.scene.ctx?.restore()
-    }
-
-    render() {
-        this.scene.ctx?.clearRect(
-            this.prevXY.x, this.prevXY.y,
-            this.width, this.height
-        )
-
-        // if (this.scene.debugMode) {
-        //     this.scene.ctx?.fillRect(
-        //         this.x, this.y,
-        //         this.width, this.height
-        //     )
-        // }
 
         if (this.hitbox) {
             this.scene.ctx?.fillRect(
@@ -121,6 +102,8 @@ export class Sprite {
             this.x, this.y,
             this.width, this.height
         )
+
+        this.scene.ctx?.restore()
     }
 
     addAnim(key: string, atlasArray: atlas[], imgSrc = this.imgSrc) {

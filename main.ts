@@ -8,16 +8,15 @@ export class Main extends Scene {
         super({
             width: window.innerWidth,
             height: window.innerHeight,
+            backgroundColor: "#333333",
             debugMode: true
         })
 
-        new Text(this, "")
         new Player(this)
-        new Enemy(this, 200, 0, "yellow")
-        new Enemy(this, 0, 600, "cyan")
-        new Enemy(this, 200, 200, "green")
-        new Enemy(this, 200, 400, "red")
-        new Enemy(this, 200, 600, "purple")
+        new Enemy(this, 250, 0, "yellow")
+        new Enemy(this, 250, 250, "gray")
+        new Enemy(this, 200, 80, "cyan")
+        new Text(this, "")
 
         // this.update(() => {
         // player.update()
