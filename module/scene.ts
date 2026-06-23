@@ -19,7 +19,7 @@ export class Scene {
     _children: (Sprite | Text)[]
     cellN: number
     cellSize: number
-    cellChild: Sprite[][]
+    cellCountIndex: Map<number, number[]>
     private fps: number
     private lastTime: number
     constructor({ width, height, backgroundColor = "gray", debugMode = false }: sceneConfig) {
@@ -43,9 +43,9 @@ export class Scene {
         this._children = []
         this.cellN = 0
         this.cellSize = 0
-        this.cellChild = []
+        this.cellCountIndex = new Map()
 
-        this.fps = 500
+        this.fps = 1
         this.lastTime = 0
 
         this.update()
@@ -55,11 +55,6 @@ export class Scene {
         if (child instanceof Sprite) {
             this.cellN++
             this.cellSize = (this.width + this.height) / this.cellN
-
-            this.cellChild = []
-            for (let i = 0; i < this.cellN * this.cellN; i++) {
-                this.cellChild.push([])
-            }
         }
         this._children.push(child)
     }
@@ -89,41 +84,40 @@ export class Scene {
                     }
                 }
 
-                this._children.forEach(child => {
+                this._children.forEach((child, i) => {
                     this.lastTime = nowTime - (deltaTime % this.fps)
 
-                    if (child instanceof Sprite) this.spatialHashing(child)
+                    if (child instanceof Sprite) this.spatialHashing(child, i)
                     child.update(nowTime)
                 })
-                this.cellChild = []
-                for (let i = 0; i < this.cellN * this.cellN; i++) {
-                    this.cellChild.push([])
-                }
+                this.cellCountIndex.clear()
             }
             requestAnimationFrame(loop)
         }
         requestAnimationFrame(loop)
     }
 
-    spatialHashing(child: Sprite) {
+    spatialHashing(child: Sprite, i: number) {
         const cellXY = {
             x: Math.round(child.x / this.cellSize),
             y: Math.round(child.y / this.cellSize)
         }
-        const i = (cellXY.y * this.cellN) + cellXY.x
+        const key = (cellXY.y * this.cellN) + cellXY.x
 
-        this.cellChild[i].push(child)
+        if (!this.cellCountIndex.has(key)) this.cellCountIndex.set(key, [])
+        const childArr = this.cellCountIndex.get(key)!
+        childArr.push(i)
 
-        if (this.cellChild[i].length > 1) {
-            for (let a = 0; a < this.cellChild[i].length; a++) {
-                for (let b = a + 1; b < this.cellChild[i].length; b++) {
-                    const childA = this.cellChild[i][a]
-                    const childB = this.cellChild[i][b]
+        if (childArr.length > 1) {
+            for (let a = 0; a < childArr.length; a++) {
+                for (let b = a + 1; b < childArr.length; b++) {
+                    const childA = this._children[childArr[a]] as Sprite
+                    const childB = this._children[childArr[b]] as Sprite
                     if (
-                        childA.x < childB.x + childB.width &&
-                        childA.x + childA.width > childB.x &&
-                        childA.y < childB.y + childB.height &&
-                        childA.y + childA.height > childB.y
+                        childA.x <= childB.x + childB.width &&
+                        childA.x + childA.width >= childB.x &&
+                        childA.y <= childB.y + childB.height &&
+                        childA.y + childA.height >= childB.y
                     ) {
                         childA.hitboxColor = "red"
                         childB.hitboxColor = "red"
