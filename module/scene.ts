@@ -45,7 +45,7 @@ export class Scene {
         this.cellSize = 0
         this.cellCountIndex = new Map()
 
-        this.fps = 1
+        this.fps = 500
         this.lastTime = 0
 
         this.update()
@@ -80,7 +80,7 @@ export class Scene {
                     for (let x = 0; x < this.cellN; x++) {
                         this.ctx!.fillStyle = "purple"
                         if ((x + y) % 2 === 0) this.ctx!.fillStyle = "orange"
-                        this.ctx?.fillRect(x * this.cellSize, y * this.cellSize, this.cellSize, this.cellSize)
+                        this.ctx?.fillRect(x * this.cellSize / 2, y * this.cellSize / 2, this.cellSize / 2, this.cellSize / 2)
                     }
                 }
 
@@ -98,26 +98,39 @@ export class Scene {
     }
 
     spatialHashing(child: Sprite, i: number) {
-        const cellXY = {
+        const childXY0 = {
             x: Math.round(child.x / this.cellSize),
             y: Math.round(child.y / this.cellSize)
         }
-        const key = (cellXY.y * this.cellN) + cellXY.x
+        const childXY1 = {
+            x: Math.round((child.x + child.width) / this.cellSize),
+            y: Math.round((child.y + child.height) / this.cellSize)
+        }
 
-        if (!this.cellCountIndex.has(key)) this.cellCountIndex.set(key, [])
-        const childArr = this.cellCountIndex.get(key)!
-        childArr.push(i)
+        let key
+        for (let y = childXY0.y; y <= childXY1.y; y++) {
+            for (let x = childXY0.x; x <= childXY1.x; x++) {
+                key = (y * this.cellN) + x
+                if (!this.cellCountIndex.has(key)) this.cellCountIndex.set(key, [])
+                const childArr = this.cellCountIndex.get(key)!
+                childArr.push(i)
+            }
+        }
 
+        if (key !== undefined) this.hitboxCheck(this.cellCountIndex.get(key)!)
+    }
+
+    hitboxCheck(childArr: number[]) {
         if (childArr.length > 1) {
             for (let a = 0; a < childArr.length; a++) {
                 for (let b = a + 1; b < childArr.length; b++) {
                     const childA = this._children[childArr[a]] as Sprite
                     const childB = this._children[childArr[b]] as Sprite
                     if (
-                        childA.x <= childB.x + childB.width &&
-                        childA.x + childA.width >= childB.x &&
-                        childA.y <= childB.y + childB.height &&
-                        childA.y + childA.height >= childB.y
+                        childA.x < childB.x + childB.width &&
+                        childA.x + childA.width > childB.x &&
+                        childA.y < childB.y + childB.height &&
+                        childA.y + childA.height > childB.y
                     ) {
                         childA.hitboxColor = "red"
                         childB.hitboxColor = "red"

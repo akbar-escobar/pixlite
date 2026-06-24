@@ -1,3 +1,36 @@
+    spatialHashing(child: Sprite, i: number) {
+        const cellXY = {
+            x: Math.round(child.x / this.cellSize),
+            y: Math.round(child.y / this.cellSize)
+        }
+        const key = (cellXY.y * this.cellN) + cellXY.x
+
+        if (!this.cellCountIndex.has(key)) this.cellCountIndex.set(key, [])
+        const childArr = this.cellCountIndex.get(key)!
+        childArr.push(i)
+
+        console.log(key)
+
+        if (childArr.length > 1) {
+            for (let a = 0; a < childArr.length; a++) {
+                for (let b = a + 1; b < childArr.length; b++) {
+                    const childA = this._children[childArr[a]] as Sprite
+                    const childB = this._children[childArr[b]] as Sprite
+                    if (
+                        childA.x < childB.x + childB.width &&
+                        childA.x + childA.width > childB.x &&
+                        childA.y < childB.y + childB.height &&
+                        childA.y + childA.height > childB.y
+                    ) {
+                        childA.hitboxColor = "red"
+                        childB.hitboxColor = "red"
+                    }
+                }
+            }
+        }
+    }
+
+
 That's a good next step for PixLite.
 
 But before implementing spatial hashing, make sure you actually need it.
