@@ -15,7 +15,7 @@ export class Main extends Scene {
         new Player(this)
         new Enemy(this, 250, 0, "yellow")
         new Enemy(this, 250, 250, "gray")
-        new Enemy(this, 200, 80, "cyan")
+        new Enemy(this, 200, 120, "cyan")
         new Text(this, "")
 
         // this.update(() => {
@@ -28,5 +28,3 @@ document.body.style.padding = "0px"
 document.body.style.margin = "0px"
 document.body.style.backgroundColor = "gray"
 new Main()
-
-

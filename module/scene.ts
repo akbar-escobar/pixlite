@@ -45,7 +45,7 @@ export class Scene {
         this.cellSize = 0
         this.cellCountIndex = new Map()
 
-        this.fps = 500
+        this.fps = 1
         this.lastTime = 0
 
         this.update()
@@ -107,17 +107,15 @@ export class Scene {
             y: Math.round((child.y + child.height) / this.cellSize)
         }
 
-        let key
         for (let y = childXY0.y; y <= childXY1.y; y++) {
             for (let x = childXY0.x; x <= childXY1.x; x++) {
-                key = (y * this.cellN) + x
+                const key = (y * this.cellN) + x
                 if (!this.cellCountIndex.has(key)) this.cellCountIndex.set(key, [])
                 const childArr = this.cellCountIndex.get(key)!
                 childArr.push(i)
+                this.hitboxCheck(this.cellCountIndex.get(key)!)
             }
         }
-
-        if (key !== undefined) this.hitboxCheck(this.cellCountIndex.get(key)!)
     }
 
     hitboxCheck(childArr: number[]) {
