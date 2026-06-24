@@ -1,16 +1,130 @@
+
+import { Sprite } from "./sprite"
+import type { Text } from "./text"
+
+class Camera {
+    zoom: number
+    constructor() {
+        this.zoom = 1
+    }
+}
+
+export class Scene {
+    canvas: HTMLCanvasElement
+    ctx: CanvasRenderingContext2D | null
+    camera: Camera
+    debugMode: boolean
+    width: number
+    height: number
+
+    _children: (Sprite | Text)[]
+    cellN: number
+    cellSize: number
+    cellCountIndex: Map<number, number[]>
+    private fps: number
+    private lastTime: number
+    constructor({ width, height, backgroundColor = "gray", debugMode = false }: sceneConfig) {
+        this.canvas = document.createElement("canvas")
+        this.canvas.style.backgroundColor = backgroundColor
+        this.canvas.style.imageRendering = "pixelated"
+        this.canvas.width = width
+        this.canvas.height = height
+        document.body.appendChild(this.canvas)
+
+        this.ctx = this.canvas.getContext("2d")
+        this.ctx!.imageSmoothingEnabled = false
+
+        this.debugMode = debugMode
+
+        this.camera = new Camera()
+
+        this.width = width
+        this.height = height
+
+        this._children = []
+        this.cellN = 0
+        this.cellSize = 0
+        this.cellCountIndex = new Map()
+
+        this.fps = 1000
+        this.lastTime = 0
+
+        this.update()
+    }
+
+    create(child: Sprite | Text) {
+        if (child instanceof Sprite) {
+            // TODO
+            if (child.hitbox) this.cellN++
+            this.cellSize = (this.width + this.height) / this.cellN
+        }
+        this._children.push(child)
+        return child
+    }
+
+    // TODO
+    addCamera() {
+        this.ctx?.translate(window.innerWidth / 2, window.innerHeight / 2)
+    }
+
+    update() {
+        const loop = (nowTime: number) => {
+            const deltaTime = nowTime - this.lastTime
+            if (deltaTime > this.fps) {
+
+                this.ctx?.setTransform(1, 0, 0, 1, 0, 0)
+                this.ctx?.clearRect(
+                    0, 0,
+                    this.width,
+                    this.height
+                )
+
+                // debug spatialHashing
+                for (let y = 0; y < this.cellN; y++) {
+                    for (let x = 0; x < this.cellN; x++) {
+                        this.ctx!.fillStyle = "purple"
+                        if ((x + y) % 2 === 0) this.ctx!.fillStyle = "orange"
+                        this.ctx?.fillRect(x * this.cellSize / 2, y * this.cellSize / 2, this.cellSize / 2, this.cellSize / 2)
+                    }
+                }
+
+                this._children.forEach((child, i) => {
+                    this.lastTime = nowTime - (deltaTime % this.fps)
+
+                    if (child instanceof Sprite) {
+                        if (child.hitbox) this.spatialHashing(child, i)
+                    }
+                    child.update(nowTime)
+                })
+                this.cellCountIndex.clear()
+            }
+            requestAnimationFrame(loop)
+        }
+        requestAnimationFrame(loop)
+    }
+
     spatialHashing(child: Sprite, i: number) {
-        const cellXY = {
+        const childXY0 = {
             x: Math.round(child.x / this.cellSize),
             y: Math.round(child.y / this.cellSize)
         }
-        const key = (cellXY.y * this.cellN) + cellXY.x
+        const childXY1 = {
+            x: Math.round((child.x + child.width) / this.cellSize),
+            y: Math.round((child.y + child.height) / this.cellSize)
+        }
 
-        if (!this.cellCountIndex.has(key)) this.cellCountIndex.set(key, [])
-        const childArr = this.cellCountIndex.get(key)!
-        childArr.push(i)
+        for (let y = childXY0.y; y <= childXY1.y; y++) {
+            for (let x = childXY0.x; x <= childXY1.x; x++) {
+                const key = (y * this.cellN) + x
+                if (!this.cellCountIndex.has(key)) this.cellCountIndex.set(key, [])
+                const childArr = this.cellCountIndex.get(key)!
+                childArr.push(i)
+                this.hitboxCheck(childArr)
+            }
+        }
+    }
 
-        console.log(key)
-
+    hitboxCheck(childArr: number[]) {
         if (childArr.length > 1) {
             for (let a = 0; a < childArr.length; a++) {
                 for (let b = a + 1; b < childArr.length; b++) {
@@ -29,550 +143,29 @@
             }
         }
     }
-
-
-That's a good next step for PixLite.
-
-But before implementing spatial hashing, make sure you actually need it.
-
-For a small game:
-
-10 sprites
-20 enemies
-5 bullets
-
-a simple collision loop is fine:
-
-for (const a of colliders) {
-    for (const b of colliders) {
-        // collision check
-    }
 }
 
-Spatial hashing becomes useful when you have:
-
-100+ objects
-hundreds of bullets
-particles
-large maps
-
-
----
-
-Step 1: Add a Hitbox component
-
-I'd start with a simple AABB (Axis-Aligned Bounding Box).
-
-class Hitbox {
-    constructor(
-        public parent: Sprite,
-        public offsetX = 0,
-        public offsetY = 0,
-        public width = 16,
-        public height = 16
-    ) {}
-
-    get x() {
-        return this.parent.x + this.offsetX;
-    }
-
-    get y() {
-        return this.parent.y + this.offsetY;
-    }
-}
-
-Usage:
-
-player.hitbox = new Hitbox(
-    player,
-    4,
-    2,
-    24,
-    30
-);
-
-
----
-
-Step 2: Collision test
-
-function intersects(
-    a: Hitbox,
-    b: Hitbox
-) {
-    return (
-        a.x < b.x + b.width &&
-        a.x + a.width > b.x &&
-        a.y < b.y + b.height &&
-        a.y + a.height > b.y
-    );
+type sceneConfig = {
+    width: number,
+    height: number,
+    backgroundColor?: string,
+    debugMode?: boolean
 }
 
 
----
 
-Step 3: Spatial Hash Grid
-
-Imagine the world divided into cells:
-
-+----+----+----+
-|0,0 |1,0 |2,0 |
-+----+----+----+
-|0,1 |1,1 |2,1 |
-+----+----+----+
-|0,2 |1,2 |2,2 |
-+----+----+----+
-
-Cell size:
-
-const CELL_SIZE = 64;
-
-
----
-
-Convert world position to cell
-
-const cellX =
-    Math.floor(hitbox.x / CELL_SIZE);
-
-const cellY =
-    Math.floor(hitbox.y / CELL_SIZE);
-
-
----
-
-Create key
-
-const key =
-    `${cellX},${cellY}`;
-
-Example:
-
-"3,4"
-
-
----
-
-Step 4: Hash structure
-
-class SpatialHash {
-    cells = new Map<
-        string,
-        Hitbox[]
-    >();
-}
-
-
----
-
-Insert object
-
-insert(hitbox: Hitbox) {
-    const cellX =
-        Math.floor(hitbox.x / 64);
-
-    const cellY =
-        Math.floor(hitbox.y / 64);
-
-    const key =
-        `${cellX},${cellY}`;
-
-    if (!this.cells.has(key)) {
-        this.cells.set(key, []);
-    }
-
-    this.cells.get(key)!.push(hitbox);
-}
-
-
----
-
-Query nearby objects
-
-query(hitbox: Hitbox) {
-    const cellX =
-        Math.floor(hitbox.x / 64);
-
-    const cellY =
-        Math.floor(hitbox.y / 64);
-
-    const key =
-        `${cellX},${cellY}`;
-
-    return this.cells.get(key) ?? [];
-}
-
-Now:
-
-const nearby =
-    spatialHash.query(player.hitbox);
-
-for (const other of nearby) {
-    if (
-        other !== player.hitbox &&
-        intersects(
-            player.hitbox,
-            other
-        )
-    ) {
-        // collision
+class scene{
+    enemy1: Enemy
+    constuctor(){
+        const player = new Player()
+        this.enemy1 = new Enemy
+        const enemy2 = new Enemy
+        const friend = new Friend
     }
 }
 
-
----
-
-Important improvement
-
-A hitbox may span multiple cells.
-
-Example:
-
-+----+----+
-| A  | A  |
-+----+----+
-
-If you only insert into one cell, collisions can be missed.
-
-Eventually you'll want:
-
-minCellX
-maxCellX
-
-minCellY
-maxCellY
-
-and insert into every covered cell.
-
-
----
-
-How I'd structure PixLite
-
-Scene
- ├─ SpatialHash
- ├─ Player
- ├─ Enemy
- └─ Bullet
-
-Sprite
- └─ Hitbox
-
-Every frame:
-
-clear spatial hash
-↓
-insert hitboxes
-↓
-query nearby
-↓
-collision checks
-
-A nice API could look like:
-
-player.hitbox = {
-    x: 4,
-    y: 2,
-    width: 24,
-    height: 30
-};
-
-and internally PixLite creates/manages the actual hitbox and spatial hash entries. This keeps the user API simple while letting you optimize later.
-
-
-
-spatical object
-
-
-define cellSize => size = children.length - 1 ()
-make a grid => for(let x and y) 
-
-
-
-import { Scene } from "./scene"
-
-export class Sprite {
-    x: number
-    y: number
-    atlas: atlas
-    imgSrc: string
-    scale: number
-    flip: { x: boolean, y: boolean }
-
-    private animArray: { key: string, imgSrc: string, atlasArray: atlas[] }[]
-    private prevAnimKey: string
-    private scene: Scene
-    constructor(
-        scene: Scene,
-        imgSrc: string,
-        x: number,
-        y: number,
-    ) {
-        this.scene = scene
-        scene.img.src = imgSrc
-        this.animArray = []
-        this.prevAnimKey = ""
-
-        this.x = x
-        this.y = y
-        this.scale = 1
-        this.atlas = {
-            x: 0, y: 0,
-            w: scene.img.width,
-            h: scene.img.height
-        }
-        this.imgSrc = imgSrc
-        this.flip = { x: false, y: false }
-    }
-
-    get width() {
-        return this.atlas.w * this.scale
-    }
-
-    get height() {
-        return this.atlas.h * this.scale
-    }
-
-    ctxConfigStatic() {
-        this.scene.ctx!.fillStyle = "hsla(0, 100%, 50%, 0.3)"
-        const fX = this.flip.x
-            ? { c: -1, s: this.width }
-            : { c: 1, s: 0 }
-        const fY = this.flip.y
-            ? { c: -1, s: this.height }
-            : { c: 1, s: 0 }
-        this.scene.ctx?.translate(fX.s, fY.s)
-        this.scene.ctx?.scale(fX.c, fY.c)
-    }
-
-    ctxConfigDynamic() {
-    }
-
-    redraw(
-        callback: (now: number) => void = () => { }
-    ) {
-        this.scene.img.src = this.imgSrc
-        let prevXY: { x: number, y: number }
-
-        this.scene.ctx?.clearRect(
-            this.x, this.y,
-            this.scene.canvas.width,
-            this.scene.canvas.height
-        )
-
-        this.ctxConfigStatic()
-
-        this.scene.img.onload = () => {
-            this.scene.update((now) => {
-                if (prevXY === undefined) prevXY = { x: this.x, y: this.y }
-
-                this.scene.ctx?.clearRect(
-                    prevXY.x, prevXY.y,
-                    this.width, this.height
-                )
-
-                this.flip.x ? this.x = -Math.abs(this.x) : this.x = Math.abs(this.x)
-                this.flip.y ? this.y = -Math.abs(this.y) : this.y = Math.abs(this.y)
-                this.ctxConfigDynamic()
-                console.log(this.x)
-                callback(now)
-
-                if (this.scene.debugMode) {
-                    this.scene.ctx?.fillRect(
-                        this.x, this.y,
-                        this.width, this.height
-                    )
-                }
-
-                this.scene.ctx?.drawImage(
-                    this.scene.img,
-                    this.atlas.x, this.atlas.y,
-                    this.atlas.w, this.atlas.h,
-                    this.x, this.y,
-                    this.width, this.height
-                )
-                prevXY = { x: this.x, y: this.y }
-            })
-        }
-    }
-
-    addAnim(key: string, atlasArray: atlas[]) {
-        this.animArray.push({ key: key, imgSrc: this.imgSrc, atlasArray })
-    }
-
-    playAnim(key: string, fps = 0) {
-        const anim = this.animArray.find(a => a.key === key)
-        if (!anim) return
-        this.imgSrc = anim.imgSrc
-
-        const frame = fps === 0 ? anim.atlasArray.length : fps
-        let i = 0
-        let lastT = 0
-        let interval = 1000 / frame
-
-        if (this.prevAnimKey !== key) {
-            this.redraw((now) => {
-                if (i > anim.atlasArray.length - 1) i = 0
-                this.atlas = {
-                    x: anim.atlasArray[i].x, y: anim.atlasArray[i].y,
-                    w: anim.atlasArray[i].w, h: anim.atlasArray[i].h
-                }
-
-                const deltaT = now - lastT
-                if (deltaT > interval) {
-                    i++
-                    lastT = now - (deltaT % interval)
-                }
-            })
-        }
-        this.prevAnimKey = key
+class player{
+    constuctor(scene){
+       const isCollide = this.collide(this, scene.enemy1)
     }
 }
-
-export type atlas = { x: number, y: number, w: number, h: number }
-
-
-animation(fps: number, imgAtlasArray: imgAtlas[]) {
-        let i = 0
-        let lastT = 0
-        let interval = 1000 / fps
-
-        const anim = (currentT: number) => {
-            if (!this.scene.ctx) return
-
-            if (i > imgAtlasArray.length - 1) i = 0
-            this.scene.ctx.clearRect(0, 0, 100, 100) // TODO
-            this.scene.ctx.drawImage(
-                this.scene.img,
-                imgAtlasArray[i].sX, imgAtlasArray[i].sY,
-                imgAtlasArray[i].sW, imgAtlasArray[i].sH,
-                imgAtlasArray[i].dX - (-this.x), imgAtlasArray[i].dY - (-this.y),
-                imgAtlasArray[i].dW, imgAtlasArray[i].dH
-            )
-
-            const deltaT = currentT - lastT
-            if (deltaT > interval) {
-                i++
-                lastT = currentT - (deltaT % interval)
-            }
-
-            requestAnimationFrame(anim)
-        }
-
-        this.scene.img.onload = () => {
-            requestAnimationFrame(anim)
-        }
-    }
-
-
-export class Main {
-    ctx: CanvasRenderingContext2D | null
-    img: HTMLImageElement
-    x: number
-    y: number
-    constructor() {
-        const canvas = document.createElement("canvas")
-        canvas.style.width = "100vw"
-        canvas.style.backgroundColor = "#333333"
-        canvas.style.imageRendering = "pixelated"
-        canvas.width = 100
-        canvas.height = 100
-        document.body.appendChild(canvas)
-
-        this.ctx = canvas.getContext("2d")
-        this.ctx!.imageSmoothingEnabled = false
-
-        this.img = new Image()
-
-        this.x = 0
-        this.y = 0
-
-        const idleAtlas = [
-            {
-                sX: 6, sY: 6,
-                sW: 16, sH: 16,
-                dX: -8, dY: -6,
-                dW: 32, dH: 32
-
-            },
-            {
-                sX: 38, sY: 6,
-                sW: 16, sH: 16,
-                dX: -8, dY: -8,
-                dW: 32, dH: 32
-            }
-        ]
-
-        const fps = 5
-        this.update("/idle.png", fps, idleAtlas)
-
-        const speed = 5
-        window.addEventListener("keydown", (e) => {
-            switch (e.key) {
-                case 'ArrowUp':
-                    this.y += speed
-                    break;
-                case 'ArrowDown':
-                    this.y -= speed
-                    break;
-                case 'ArrowLeft':
-                    this.x += speed
-                    break;
-                case 'ArrowRight':
-                    this.x -= speed
-                    break;
-            }
-        })
-    }
-
-    update(imgSrc: string, fps: number, imgAtlasAnim: imgAtlasAnim) {
-        let i = 0
-        let lastT = 0
-        let interval = 1000 / fps
-        this.img.src = imgSrc
-
-        const anim = (currentT: number) => {
-            if (!this.ctx) return
-
-            if (i > imgAtlasAnim.length - 1) i = 0
-            this.ctx.clearRect(0, 0, 100, 100) // TODO
-            this.ctx.drawImage(
-                this.img,
-                imgAtlasAnim[i].sX, imgAtlasAnim[i].sY,
-                imgAtlasAnim[i].sW, imgAtlasAnim[i].sH,
-                imgAtlasAnim[i].dX - this.x,
-                imgAtlasAnim[i].dY - this.y,
-                imgAtlasAnim[i].dW, imgAtlasAnim[i].dH
-            )
-
-            const deltaT = currentT - lastT
-            if (deltaT > interval) {
-                i++
-                lastT = currentT - (deltaT % interval)
-            }
-
-            requestAnimationFrame(anim)
-        }
-
-        this.img.onload = () => {
-            requestAnimationFrame(anim)
-        }
-    }
-}
-type imgAtlas = {
-    sX: number, sY: number,
-    sW: number, sH: number,
-    dX: number, dY: number,
-    dW: number, dH: number
-}
-
-document.body.style.padding = "0px"
-document.body.style.margin = "0px"
-new Main()
-
-type imgAtlasAnim = {
-    sX: number, sY: number,
-    sW: number, sH: number,
-    dX: number, dY: number,
-    dW: number, dH: number
-}[]

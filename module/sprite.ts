@@ -40,8 +40,6 @@ export class Sprite {
         this.flip = { x: false, y: false }
         this.hitbox = false
         this.hitboxColor = "blue"
-
-        scene.children = this
     }
 
     get width() {
@@ -106,7 +104,7 @@ export class Sprite {
         this.scene.ctx?.restore()
     }
 
-    addAnim(key: string, atlasArray: atlas[], imgSrc = this.imgSrc) {
+    addAnim(key: string, atlasArray: atlas[], imgSrc = this.img.src) {
         this.animArray.push({ key: key, atlasArray, imgSrc })
     }
 
