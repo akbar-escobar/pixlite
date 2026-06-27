@@ -1,16 +1,19 @@
 import { Scene } from "../scene"
 import { Sprite } from "../sprite"
 import { Collision } from "./collision"
+import { Input } from "./input"
 
 export class Update {
-    fps = 500
+    fps = 1
     lastTime = 0
 
     scene: Scene
     collision: Collision
-    constructor(scene: Scene, collision: Collision) {
+    input: Input
+    constructor(scene: Scene, collision: Collision, input: Input) {
         this.scene = scene
         this.collision = collision
+        this.input = input
     }
 
     loop() {
@@ -18,9 +21,11 @@ export class Update {
             const deltaTime = nowTime - this.lastTime
             if (deltaTime > this.fps) {
                 this.lastTime = nowTime - (deltaTime % this.fps)
+
                 this.ctx()
                 this.debug()
                 this.children(nowTime)
+
                 this.collision.cellCountIndex.clear()
             }
             requestAnimationFrame(loop)
@@ -40,13 +45,14 @@ export class Update {
     }
 
     children(nowTime: number) {
-        const { _children } = this.scene
+        const { children } = this.scene
 
-        _children.forEach((child, i) => {
+        children.forEach((child, i) => {
             if (child instanceof Sprite) {
                 if (child.hitbox) this.collision.spatialCheck(child, i)
+                child.update(nowTime)
             }
-            child.update(nowTime)
+            child.loop(nowTime)
         })
     }
 

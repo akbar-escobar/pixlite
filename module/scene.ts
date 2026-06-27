@@ -2,18 +2,20 @@ import { Collision } from "./scene/collision"
 import { Update } from "./scene/update"
 import { Sprite } from "./sprite"
 import type { Text } from "./text"
+import { Input } from "./scene/input"
 
 export class Scene {
     canvas = document.createElement("canvas")
     ctx = this.canvas.getContext("2d")
-    _children: (Sprite | Text)[] = []
+    children: (Sprite | Text)[] = []
 
     debugMode: boolean
     width: number
     height: number
 
+    input = new Input()
     collision = new Collision(this)
-    update = new Update(this, this.collision)
+    update = new Update(this, this.collision, this.input)
     constructor({ width, height, backgroundColor = "gray", debugMode = false }: sceneConfig) {
         this.canvas.width = width
         this.canvas.height = height
@@ -23,18 +25,26 @@ export class Scene {
         this.height = height
 
         this.canvas.style.imageRendering = "pixelated"
-        document.body.appendChild(this.canvas)
         this.ctx!.imageSmoothingEnabled = false
+        document.body.appendChild(this.canvas)
+        document.body.style.margin = "0px"
+        document.body.style.padding = "0px"
+        document.body.style.overflow = "hidden"
 
         this.update.loop()
     }
 
     create(child: Sprite | Text) {
         if (child instanceof Sprite) {
-            if (child.hitbox) this.collision.cellN++
-            this.collision.cellSize = (this.width + this.height) / this.collision.cellN
+            if (child.hitbox) {
+                this.collision.cellN += 1
+                const size = (child.width + child.height) * 2
+                if (size > this.collision.cellSize) {
+                    this.collision.cellSize = size
+                }
+            }
         }
-        this._children.push(child)
+        this.children.push(child)
     }
 }
 

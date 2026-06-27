@@ -22,7 +22,9 @@ export class Text {
         scene.ctx!.font = `${this.size}px Arial`
     }
 
-    update(nowTime:number) {
+    update(_nowTime: number) { }
+
+    loop(nowTime: number) {
         const deltaTime = nowTime - this.lastTime
         if (deltaTime > 1) {
             this.lastTime = nowTime

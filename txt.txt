@@ -1,171 +1,32 @@
-
-import { Sprite } from "./sprite"
-import type { Text } from "./text"
-
-class Camera {
-    zoom: number
+export class Input {
+    eventMap = new Map<eventKey, (e: eventMap[eventKey]) => void>()
     constructor() {
-        this.zoom = 1
+        window.addEventListener("keydown", (e) => {
+            this.eventMap.get("keyboard")!(e)
+        })
+        window.addEventListener("pointerdown", (e) => {
+            this.eventMap.get("pointer")!(e)
+        })
+    }
+
+    event<K extends eventKey>(key: K, callback: (e: eventMap[K]) => void) {
+        this.eventMap.set(key, callback)
     }
 }
 
-export class Scene {
-    canvas: HTMLCanvasElement
-    ctx: CanvasRenderingContext2D | null
-    camera: Camera
-    debugMode: boolean
-    width: number
-    height: number
-
-    _children: (Sprite | Text)[]
-    cellN: number
-    cellSize: number
-    cellCountIndex: Map<number, number[]>
-    private fps: number
-    private lastTime: number
-    constructor({ width, height, backgroundColor = "gray", debugMode = false }: sceneConfig) {
-        this.canvas = document.createElement("canvas")
-        this.canvas.style.backgroundColor = backgroundColor
-        this.canvas.style.imageRendering = "pixelated"
-        this.canvas.width = width
-        this.canvas.height = height
-        document.body.appendChild(this.canvas)
-
-        this.ctx = this.canvas.getContext("2d")
-        this.ctx!.imageSmoothingEnabled = false
-
-        this.debugMode = debugMode
-
-        this.camera = new Camera()
-
-        this.width = width
-        this.height = height
-
-        this._children = []
-        this.cellN = 0
-        this.cellSize = 0
-        this.cellCountIndex = new Map()
-
-        this.fps = 1000
-        this.lastTime = 0
-
-        this.update()
-    }
-
-    create(child: Sprite | Text) {
-        if (child instanceof Sprite) {
-            // TODO
-            if (child.hitbox) this.cellN++
-            this.cellSize = (this.width + this.height) / this.cellN
-        }
-        this._children.push(child)
-        return child
-    }
-
-    // TODO
-    addCamera() {
-        this.ctx?.translate(window.innerWidth / 2, window.innerHeight / 2)
-    }
-
-    update() {
-        const loop = (nowTime: number) => {
-            const deltaTime = nowTime - this.lastTime
-            if (deltaTime > this.fps) {
-
-                this.ctx?.setTransform(1, 0, 0, 1, 0, 0)
-                this.ctx?.clearRect(
-                    0, 0,
-                    this.width,
-                    this.height
-                )
-
-                // debug spatialHashing
-                for (let y = 0; y < this.cellN; y++) {
-                    for (let x = 0; x < this.cellN; x++) {
-                        this.ctx!.fillStyle = "purple"
-                        if ((x + y) % 2 === 0) this.ctx!.fillStyle = "orange"
-                        this.ctx?.fillRect(x * this.cellSize / 2, y * this.cellSize / 2, this.cellSize / 2, this.cellSize / 2)
-                    }
-                }
-
-                this._children.forEach((child, i) => {
-                    this.lastTime = nowTime - (deltaTime % this.fps)
-
-                    if (child instanceof Sprite) {
-                        if (child.hitbox) this.spatialHashing(child, i)
-                    }
-                    child.update(nowTime)
-                })
-                this.cellCountIndex.clear()
-            }
-            requestAnimationFrame(loop)
-        }
-        requestAnimationFrame(loop)
-    }
-
-    spatialHashing(child: Sprite, i: number) {
-        const childXY0 = {
-            x: Math.round(child.x / this.cellSize),
-            y: Math.round(child.y / this.cellSize)
-        }
-        const childXY1 = {
-            x: Math.round((child.x + child.width) / this.cellSize),
-            y: Math.round((child.y + child.height) / this.cellSize)
-        }
-
-        for (let y = childXY0.y; y <= childXY1.y; y++) {
-            for (let x = childXY0.x; x <= childXY1.x; x++) {
-                const key = (y * this.cellN) + x
-                if (!this.cellCountIndex.has(key)) this.cellCountIndex.set(key, [])
-                const childArr = this.cellCountIndex.get(key)!
-                childArr.push(i)
-                this.hitboxCheck(childArr)
-            }
-        }
-    }
-
-    hitboxCheck(childArr: number[]) {
-        if (childArr.length > 1) {
-            for (let a = 0; a < childArr.length; a++) {
-                for (let b = a + 1; b < childArr.length; b++) {
-                    const childA = this._children[childArr[a]] as Sprite
-                    const childB = this._children[childArr[b]] as Sprite
-                    if (
-                        childA.x < childB.x + childB.width &&
-                        childA.x + childA.width > childB.x &&
-                        childA.y < childB.y + childB.height &&
-                        childA.y + childA.height > childB.y
-                    ) {
-                        childA.hitboxColor = "red"
-                        childB.hitboxColor = "red"
-                    }
-                }
-            }
-        }
-    }
+type eventMap = {
+    pointer: PointerEvent,
+    keyboard: KeyboardEvent
 }
-
-type sceneConfig = {
-    width: number,
-    height: number,
-    backgroundColor?: string,
-    debugMode?: boolean
-}
+type eventKey = keyof eventMap
 
 
+update problems
 
-class scene{
-    enemy1: Enemy
-    constuctor(){
-        const player = new Player()
-        this.enemy1 = new Enemy
-        const enemy2 = new Enemy
-        const friend = new Friend
+class Player extends Sprite{
+    constructor(){
+        config for Sprite
     }
-}
 
-class player{
-    constuctor(scene){
-       const isCollide = this.collide(this, scene.enemy1)
-    }
+
 }

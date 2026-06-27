@@ -6,14 +6,15 @@ export class Sprite {
     atlas: atlas[]
     scale: number
     flip: { x: boolean, y: boolean }
-    hitbox: boolean
+    hitbox = false
     hitboxColor: string
+    scene: Scene
+    animArray: { key: string, imgSrc: string, atlasArray: atlas[] }[] = []
 
-    private animArray: { key: string, imgSrc: string, atlasArray: atlas[] }[]
-    private animFps: number
-    private lastTime: number
-    private frameI: number
-    private scene: Scene
+    private frameI = 0
+    private animFps = 0
+    private lastTime = 0
+
     private img: HTMLImageElement
     constructor(
         scene: Scene,
@@ -24,11 +25,6 @@ export class Sprite {
         this.scene = scene
         this.img = new Image()
         this.img.src = imgSrc
-        this.animArray = []
-        this.frameI = 0
-        this.animFps = 0
-        this.lastTime = 0
-
         this.x = x
         this.y = y
         this.atlas = [{
@@ -38,7 +34,6 @@ export class Sprite {
         }]
         this.scale = 1
         this.flip = { x: false, y: false }
-        this.hitbox = false
         this.hitboxColor = "blue"
     }
 
@@ -61,6 +56,7 @@ export class Sprite {
     }
 
     ctxConfig() {
+        this.scene.ctx?.save()
         this.scene.ctx!.fillStyle = this.hitboxColor
 
         this.scene.ctx?.translate(
@@ -74,10 +70,11 @@ export class Sprite {
         )
     }
 
-    update(nowTime: number) {
-        this.scene.ctx?.save()
+    update(_nowTime: number) { }
 
+    loop(nowTime: number) {
         this.ctxConfig()
+
         const deltaTime = nowTime - this.lastTime
         if (deltaTime > this.animFps) {
             this.lastTime = nowTime - (deltaTime % this.animFps)
@@ -118,6 +115,17 @@ export class Sprite {
         this.animFps = fps === 0
             ? 1000 / anim.atlasArray.length
             : 100 / fps
+    }
+
+    isCollide(x: number, y: number) {
+        if (
+            x < this.x + this.width &&
+            x + this.width > this.x &&
+            y < this.y + this.height &&
+            y + this.height > this.y
+        ) {
+            return true
+        } else return false
     }
 }
 

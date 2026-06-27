@@ -41,10 +41,10 @@ export class Collision {
     }
 
     childCheck(a: number, b: number, childArr: number[]) {
-        const { _children } = this.scene
+        const { children } = this.scene
 
-        const childA = _children[childArr[a]] as Sprite
-        const childB = _children[childArr[b]] as Sprite
+        const childA = children[childArr[a]] as Sprite
+        const childB = children[childArr[b]] as Sprite
         if (
             childA.x < childB.x + childB.width &&
             childA.x + childA.width > childB.x &&

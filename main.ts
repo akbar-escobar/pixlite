@@ -19,10 +19,6 @@ export class Main extends Scene {
         new Enemy(this, 250, 250, "gray")
         new Enemy(this, 200, 120, "cyan")
         new Text(this, "")
-
-        // this.create(() => {
-        // player.update()
-        // })
     }
 }
 
