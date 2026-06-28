@@ -117,7 +117,7 @@ export class Sprite {
             : 100 / fps
     }
 
-    isCollide(x: number, y: number) {
+    clickArea(x: number, y: number): boolean {
         if (
             x < this.x + this.width &&
             x + this.width > this.x &&

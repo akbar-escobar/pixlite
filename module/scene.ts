@@ -3,6 +3,7 @@ import { Update } from "./scene/update"
 import { Sprite } from "./sprite"
 import type { Text } from "./text"
 import { Input } from "./scene/input"
+import { Camera } from "./scene/camera"
 
 export class Scene {
     canvas = document.createElement("canvas")
@@ -14,8 +15,9 @@ export class Scene {
     height: number
 
     input = new Input()
+    camera = new Camera(this)
     collision = new Collision(this)
-    update = new Update(this, this.collision, this.input)
+    update = new Update(this, this.collision, this.camera)
     constructor({ width, height, backgroundColor = "gray", debugMode = false }: sceneConfig) {
         this.canvas.width = width
         this.canvas.height = height

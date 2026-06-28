@@ -1,7 +1,7 @@
 import { Scene } from "../scene"
 import { Sprite } from "../sprite"
+import type { Camera } from "./camera"
 import { Collision } from "./collision"
-import { Input } from "./input"
 
 export class Update {
     fps = 1
@@ -9,11 +9,11 @@ export class Update {
 
     scene: Scene
     collision: Collision
-    input: Input
-    constructor(scene: Scene, collision: Collision, input: Input) {
+    camera:Camera
+    constructor(scene: Scene, collision: Collision, camera:Camera) {
         this.scene = scene
         this.collision = collision
-        this.input = input
+        this.camera=camera
     }
 
     loop() {
@@ -42,6 +42,8 @@ export class Update {
             width,
             height
         )
+
+        this.camera.ctx()
     }
 
     children(nowTime: number) {

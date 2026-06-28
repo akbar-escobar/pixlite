@@ -1,4 +1,27 @@
 export class Input {
+    eventMap: { key?: eventKey, callback?: (e: eventObj[eventKey]) => void } = {}
+    constructor() {
+        window.addEventListener("keydown", (e) => {
+            this.eventMap.callback!(e)
+        })
+        window.addEventListener("pointerdown", (e) => {
+            this.eventMap.callback!(e)
+        })
+    }
+
+    event<K extends eventKey>(key: K, callback: (e: eventObj[K]) => void) {
+        this.eventMap.key = key
+        this.eventMap.callback = callback as any
+    }
+}
+
+type eventObj = {
+    pointer: PointerEvent,
+    keyboard: KeyboardEvent
+}
+type eventKey = keyof eventObj
+
+export class Input {
     eventMap = new Map<eventKey, (e: eventMap[eventKey]) => void>()
     constructor() {
         window.addEventListener("keydown", (e) => {
